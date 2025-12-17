@@ -1,0 +1,16 @@
+# Dunebugger Starter Requirements
+
+# NATS messaging
+nats-py
+
+# GPIO control for Raspberry Pi (only install on Pi)
+# Uncomment the line below when running on Raspberry Pi:
+# RPi.GPIO
+
+# Configuration and environment
+python-dotenv
+
+# Development/testing dependencies (optional)
+# These are helpful for development but not required for production:
+# pytest
+# mock

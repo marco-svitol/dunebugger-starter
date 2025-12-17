@@ -1,0 +1,14 @@
+# Dunebugger Starter Requirements
+# Minimal dependencies based on dunebugger pattern
+
+# NATS messaging
+nats-py
+
+# GPIO control for Raspberry Pi
+RPi.GPIO
+
+# Configuration and environment
+python-dotenv
+
+# Async support (usually included with Python 3.7+)
+# asyncio

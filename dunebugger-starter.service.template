@@ -1,0 +1,32 @@
+# GPIO-NATS Sender Systemd Service Template
+# This file shows the systemd service configuration
+# The actual service file is created by install.sh at /etc/systemd/system/gpio-nats-sender.service
+
+[Unit]
+Description=Dunebugger Starter
+Documentation=file:///opt/dunebugger-starter/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/opt/dunebugger-starter/app
+Environment=PATH=/opt/dunebugger-starter/.venv/bin
+ExecStart=/opt/dunebugger-starter/.venv/bin/python main.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=dunebugger-starter
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/dunebugger-starter
+
+[Install]
+WantedBy=multi-user.target
