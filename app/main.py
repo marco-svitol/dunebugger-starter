@@ -54,11 +54,22 @@ class GPIONATSSender:
         try:
             # Initialize NATS client if enabled
             if getattr(settings, 'natsEnabled', True):
+                # Get connection parameters from settings
+                timeout = getattr(settings, 'natsTimeout', 10)
+                max_retries = getattr(settings, 'natsMaxRetries', 3)
+                retry_delay = getattr(settings, 'natsRetryDelay', 5)
+                
                 self.nats_client = SimpleNATSClient(
                     servers=self.nats_server,
-                    client_id=self.client_id
+                    client_id=self.client_id,
+                    connection_timeout=timeout,
+                    max_retries=max_retries,
+                    retry_delay=retry_delay
                 )
-                await self.nats_client.connect()
+                
+                # Try to connect, but don't fail initialization if NATS is unavailable
+                if not await self.nats_client.connect():
+                    logger.warning("Initial NATS connection failed, but application will continue. Will retry in main loop.")
             else:
                 logger.warning("NATS is disabled in configuration")
             
@@ -117,13 +128,10 @@ class GPIONATSSender:
         
         try:
             while self.running:
-                # Check NATS connection status
+                # Check NATS connection status and attempt reconnection if needed
                 if self.nats_client and not self.nats_client.get_connection_status():
                     logger.warning("NATS connection lost, attempting to reconnect...")
-                    try:
-                        await self.nats_client.connect()
-                    except Exception as e:
-                        logger.error(f"Failed to reconnect to NATS: {e}")
+                    await self.nats_client.connect()  # This now handles retries internally
                 
                 # Sleep for a short time to prevent busy waiting
                 await asyncio.sleep(1)

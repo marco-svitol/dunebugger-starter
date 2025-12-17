@@ -62,6 +62,11 @@ Edit `app/config/gpio-nats.conf` to customize the application:
 natsServer = nats://192.168.1.100:4222
 natsSubject = dunebugger.core.dunebugger_set
 natsMessage = c
+
+# Connection management (new features)
+natsTimeout = 10          # Connection timeout in seconds
+natsMaxRetries = 3        # Maximum retry attempts
+natsRetryDelay = 5        # Base delay between retries (exponential backoff)
 ```
 
 ## Usage
@@ -132,6 +137,35 @@ The application includes mock GPIO support for development on non-Raspberry Pi s
 python app/main.py
 ```
 
+### Test Utilities
+
+Several test utilities are provided for troubleshooting and development:
+
+#### Network Connectivity Test
+Test basic network connectivity to the NATS server:
+```bash
+./test_network.py
+```
+
+#### NATS Connection Test  
+Test the full NATS connection with authentication and message sending:
+```bash
+./test_nats_connection.py
+```
+
+#### Local NATS Testing
+For development, you can set up a local NATS server using Docker:
+```bash
+# Start local NATS server and update config
+./local_nats_test.py start
+
+# Test your application with local NATS
+python app/main.py
+
+# Stop local NATS and restore original config  
+./local_nats_test.py stop
+```
+
 ## NATS Message Format
 
 The application sends messages in JSON format:
@@ -144,11 +178,73 @@ The application sends messages in JSON format:
 
 ## Troubleshooting
 
+### Connection Issues
+
+If you're seeing NATS connection timeout errors like:
+```
+nats: encountered error
+asyncio.exceptions.CancelledError
+TimeoutError
+```
+
+Follow these steps:
+
+#### 1. Test Network Connectivity
+Run the network connectivity test to check if the NATS server is reachable:
+
+```bash
+./test_network.py
+```
+
+This will test:
+- DNS resolution (if using hostnames)
+- Ping connectivity
+- TCP connection to the NATS port
+
+#### 2. Test NATS Connection
+Test the NATS connection specifically:
+
+```bash
+./test_nats_connection.py
+```
+
+This will test the full NATS connection with retry logic and provide detailed error messages.
+
+#### 3. Check Configuration
+Verify your NATS server settings in `app/config/dunebugger-starter.conf`:
+
+```ini
+[NATS]
+# Ensure this IP/hostname is correct for your network
+natsServer = nats://10.1.2.2:4222
+# Increase timeout if you have slow network
+natsTimeout = 15
+# Increase retries for unreliable connections  
+natsMaxRetries = 5
+# Adjust retry delay
+natsRetryDelay = 10
+```
+
+### Connection Management Features
+
+The application now includes robust connection management:
+
+- **Automatic Retry**: Configurable retry attempts with exponential backoff
+- **Network Connectivity Checks**: Pre-connection TCP tests
+- **Graceful Degradation**: Application continues running even if NATS is unavailable
+- **Connection Recovery**: Automatic reconnection attempts in main loop
+- **Detailed Logging**: Clear error messages for connection issues
+
 ### Common Issues
 
 1. **GPIO Permission Errors**: Run with appropriate permissions or add user to gpio group
-2. **NATS Connection Failures**: Check server IP, port, and network connectivity
-3. **Module Import Errors**: Ensure all dependencies are installed with pip
+2. **NATS Server Unreachable**: 
+   - Check if NATS server is running: `docker ps` or `systemctl status nats`
+   - Verify IP address and port
+   - Check firewall settings
+   - Test with: `telnet <ip> 4222`
+3. **Network Connectivity**: Use `./test_network.py` to diagnose
+4. **Module Import Errors**: Ensure all dependencies are installed with pip
 
 ### Debug Mode
 

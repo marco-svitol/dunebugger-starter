@@ -69,7 +69,7 @@ class GPIONATSSettings:
             return value.lower() in ['true', '1', 'yes', 'on']
         
         # Integer options
-        integer_options = ['gpioPin', 'natsPort', 'bouncingThreshold']
+        integer_options = ['gpioPin', 'natsPort', 'natsTimeout', 'natsMaxRetries', 'natsRetryDelay']
         if option in integer_options:
             try:
                 return int(value)
