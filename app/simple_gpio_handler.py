@@ -70,6 +70,7 @@ class SimpleGPIOHandler:
                 self.gpio_pin,
                 edge,
                 callback=self._gpio_callback,
+                bouncetime=0
                 #bouncetime=self.bounce_time
             )
             
