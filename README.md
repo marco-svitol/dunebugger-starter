@@ -49,7 +49,7 @@ Edit `app/config/gpio-nats.conf` to customize the application:
 
 ### Key Settings
 
-- **GPIO Pin**: `gpioPin = 21` (BCM pin number)
+- **GPIO Pin**: `gpioPin = 6` (BCM pin number)
 - **NATS Server**: `natsServer = nats://192.168.1.100:4222` (replace with your target IP)
 - **NATS Subject**: `natsSubject = dunebugger.core.dunebugger_set`
 - **Message**: `natsMessage = c`
@@ -110,13 +110,13 @@ sudo systemctl status dunebugger-starter
 
 Connect your input device to the configured GPIO pin:
 
-- **Pin 21** (default): BCM GPIO 21 (Physical pin 12)
+- **Pin 6** (default): BCM GPIO 6 (Physical pin 12)
 - **Ground**: Any GND pin
 - **Pull Resistor**: Configured in software (UP/DOWN)
 
 ### Example: Button Connection
 ```
-Button ---- GPIO 21 (Pin 12)
+Button ---- GPIO 6 (Pin 12)
 Button ---- GND (Pin 6)
 ```
 

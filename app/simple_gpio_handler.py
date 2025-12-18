@@ -42,7 +42,7 @@ class SimpleGPIOHandler:
     """Simple GPIO handler for detecting input changes."""
     
     def __init__(self, callback_function=None):
-        self.gpio_pin = getattr(settings, 'gpioPin', 21)  # Default to pin 21
+        self.gpio_pin = getattr(settings, 'gpioPin', 6)  # Default to pin 6
 
         self.edge_detection = 'RISING'
         self.bounce_time = int(getattr(settings, 'bouncingThreshold', 200) * 1000)  # Convert to milliseconds
