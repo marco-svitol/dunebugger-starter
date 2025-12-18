@@ -5,7 +5,7 @@
 nats-py
 
 # GPIO control for Raspberry Pi
-RPi.GPIO
+rpi-lgpio
 
 # Configuration and environment
 python-dotenv
