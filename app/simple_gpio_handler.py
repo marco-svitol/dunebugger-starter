@@ -42,9 +42,9 @@ class SimpleGPIOHandler:
     """Simple GPIO handler for detecting input changes."""
     
     def __init__(self, callback_function=None):
-        self.gpio_pin = getattr(settings, 'gpioPin', 18)  # Default to pin 18
-        self.pull_up_down = getattr(settings, 'gpioPullUpDown', 'DOWN')
-        self.edge_detection = getattr(settings, 'gpioEdgeDetection', 'RISING')
+        self.gpio_pin = getattr(settings, 'gpioPin', 21)  # Default to pin 21
+
+        self.edge_detection = 'RISING'
         self.bounce_time = int(getattr(settings, 'bouncingThreshold', 200) * 1000)  # Convert to milliseconds
         self.callback_function = callback_function
         
@@ -57,13 +57,13 @@ class SimpleGPIOHandler:
             GPIO.setmode(GPIO.BCM)
             
             # Configure pull up/down
-            pull = GPIO.PUD_UP if self.pull_up_down.upper() == 'UP' else GPIO.PUD_DOWN
+            pull = GPIO.PUD_DOWN
             
             # Setup pin
             GPIO.setup(self.gpio_pin, GPIO.IN, pull_up_down=pull)
             
             # Configure edge detection
-            edge = getattr(GPIO, self.edge_detection.upper(), GPIO.RISING)
+            edge = GPIO.RISING
             
             # Add event detection
             GPIO.add_event_detect(
@@ -73,8 +73,8 @@ class SimpleGPIOHandler:
                 bouncetime=self.bounce_time
             )
             
-            logger.info(f"GPIO pin {self.gpio_pin} configured for {self.edge_detection} edge detection")
-            logger.info(f"Pull resistor: {self.pull_up_down}, Bounce time: {self.bounce_time}ms")
+            logger.info(f"GPIO pin {self.gpio_pin} configured for RISING edge detection")
+            logger.info(f"Pull resistor: DOWN, Bounce time: {self.bounce_time}ms")
             
         except Exception as e:
             logger.error(f"Error setting up GPIO: {e}")

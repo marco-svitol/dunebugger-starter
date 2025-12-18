@@ -49,7 +49,7 @@ natsServer = nats://192.168.1.100:4222
 
 [GPIO]
 # Set your GPIO pin (BCM numbering)
-gpioPin = 18
+gpioPin = 21
 ```
 
 ### 4. Start and Enable the Service
@@ -153,7 +153,7 @@ natsSubject = dunebugger.core.dunebugger_set
 natsMessage = c
 
 [GPIO]
-gpioPin = 18
+gpioPin = 21
 gpioEdgeDetection = RISING
 bouncingThreshold = 0.2
 ```

@@ -45,7 +45,7 @@ natsServer = nats://192.168.1.100:4222
 
 [GPIO]  
 # Set your GPIO pin (BCM numbering)
-gpioPin = 18
+gpioPin = 21
 ```
 
 #### Step 3: Start and Enable Service
@@ -202,7 +202,7 @@ debugMode = False
 clientId = gpio-nats-sender-001
 
 [GPIO]
-gpioPin = 18
+gpioPin = 21
 gpioPullUpDown = DOWN
 gpioEdgeDetection = RISING
 bouncingThreshold = 0.2
