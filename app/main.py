@@ -2,6 +2,7 @@
 """
 Dunebugger Starter
 Simple application that listens to a GPIO input and sends NATS messages.
+Also subscribes to NATS queue "dunebugger.starter.*" to handle GPIO control commands.
 Based on the dunebugger architecture pattern.
 """
 
@@ -12,6 +13,9 @@ from gpio_nats_logging import logger
 from gpio_nats_settings import settings
 from simple_gpio_handler import SimpleGPIOHandler
 from simple_nats_client import SimpleNATSClient
+from mqueue import NATSComm, NullNATSComm
+from mqueue_handler import MessagingQueueHandler
+from starter_gpio_handler import StarterGPIOHandler
 
 
 class GPIONATSSender:
@@ -21,6 +25,9 @@ class GPIONATSSender:
         self.running = False
         self.gpio_handler = None
         self.nats_client = None
+        self.starter_gpio_handler = None
+        self.mqueue_handler = None
+        self.mqueue_comm = None
         
         # Configuration from settings
         self.nats_server = getattr(settings, 'natsServer', 'nats://localhost:4222')
@@ -29,6 +36,7 @@ class GPIONATSSender:
         self.client_id = getattr(settings, 'clientId', 'dunebugger-starter')
         
         logger.info(f"Configured to send '{self.nats_message}' to '{self.nats_subject}' on '{self.nats_server}'")
+        logger.info(f"Will also listen to 'dunebugger.starter.*' for GPIO commands")
     
     async def gpio_trigger_callback(self, channel):
         """Callback function called when GPIO is triggered."""
@@ -52,7 +60,39 @@ class GPIONATSSender:
         logger.info("Initializing Dunebugger Starter...")
         
         try:
-            # Initialize NATS client if enabled
+            # Initialize GPIO handler for output control
+            logger.info("Initializing GPIO handler for output control...")
+            self.starter_gpio_handler = StarterGPIOHandler()
+            
+            # Initialize message queue handler
+            logger.info("Initializing message queue handler...")
+            self.mqueue_handler = MessagingQueueHandler(self.starter_gpio_handler)
+            
+            # Initialize NATS communication for message queue if enabled
+            if getattr(settings, 'natsEnabled', True):
+                logger.info("Initializing NATS message queue subscriber...")
+                # Convert server string to list if needed
+                servers = self.nats_server
+                if isinstance(servers, str):
+                    servers = [servers]
+                
+                self.mqueue_comm = NATSComm(
+                    nat_servers=servers,
+                    client_id=self.client_id,
+                    subject_root="dunebugger.starter",
+                    mqueue_handler=self.mqueue_handler
+                )
+                
+                # Set the sender in the handler for potential replies
+                self.mqueue_handler.set_mqueue_sender(self.mqueue_comm)
+                
+                # Start NATS listener
+                await self.mqueue_comm.start_listener()
+            else:
+                logger.warning("NATS message queue is disabled in configuration")
+                self.mqueue_comm = NullNATSComm()
+            
+            # Initialize NATS client for sending messages if enabled
             if getattr(settings, 'natsEnabled', True):
                 # Get connection parameters from settings
                 timeout = getattr(settings, 'natsTimeout', 10)
@@ -71,15 +111,15 @@ class GPIONATSSender:
                 if not await self.nats_client.connect():
                     logger.warning("Initial NATS connection failed, but application will continue. Will retry in main loop.")
             else:
-                logger.warning("NATS is disabled in configuration")
+                logger.warning("NATS client is disabled in configuration")
             
-            # Initialize GPIO handler if enabled
+            # Initialize GPIO handler for input detection if enabled
             if getattr(settings, 'gpioEnabled', True):
                 self.gpio_handler = SimpleGPIOHandler(
                     callback_function=self.gpio_trigger_callback
                 )
             else:
-                logger.warning("GPIO is disabled in configuration")
+                logger.warning("GPIO input detection is disabled in configuration")
             
             logger.info("Initialization completed successfully")
             return True
@@ -93,11 +133,19 @@ class GPIONATSSender:
         logger.info("Cleaning up resources...")
         
         try:
-            # Cleanup GPIO
+            # Cleanup NATS message queue
+            if self.mqueue_comm and hasattr(self.mqueue_comm, 'close_listener'):
+                await self.mqueue_comm.close_listener()
+            
+            # Cleanup GPIO handler for outputs
+            if self.starter_gpio_handler:
+                self.starter_gpio_handler.cleanup_gpios()
+            
+            # Cleanup GPIO handler for inputs
             if self.gpio_handler:
                 self.gpio_handler.cleanup()
             
-            # Disconnect NATS
+            # Disconnect NATS client
             if self.nats_client:
                 await self.nats_client.disconnect()
             
@@ -130,8 +178,12 @@ class GPIONATSSender:
             while self.running:
                 # Check NATS connection status and attempt reconnection if needed
                 if self.nats_client and not self.nats_client.get_connection_status():
-                    logger.warning("NATS connection lost, attempting to reconnect...")
+                    logger.warning("NATS client connection lost, attempting to reconnect...")
                     await self.nats_client.connect()  # This now handles retries internally
+                
+                # Check message queue connection status 
+                if self.mqueue_comm and hasattr(self.mqueue_comm, 'get_connection_status') and not self.mqueue_comm.get_connection_status():
+                    logger.debug("NATS message queue connection status: disconnected (will auto-reconnect)")
                 
                 # Sleep for a short time to prevent busy waiting
                 await asyncio.sleep(1)
