@@ -70,8 +70,7 @@ class SimpleGPIOHandler:
                 self.gpio_pin,
                 edge,
                 callback=self._gpio_callback,
-                bouncetime=0
-                #bouncetime=self.bounce_time
+                bouncetime=self.bounce_time
             )
             
             logger.info(f"GPIO pin {self.gpio_pin} configured for RISING edge detection")
